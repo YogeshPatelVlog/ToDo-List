@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated To-Do List</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(to right, #51b7d9, #e8508a, #facc15);
+      --card-bg: rgba(255, 255, 255, 0.2);
+      --task-bg: rgba(255, 255, 255, 0.85);
+      --text-color: #333;
+    }
+    body.dark {
+      --bg-gradient: linear-gradient(to right, #0f172a, #1e293b, #334155);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --task-bg: rgba(51, 65, 85, 0.9);
+      --text-color: #f1f5f9;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-gradient);
+      transition: background 0.5s;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar h2 {
+      color: white;
+      font-size: 20px;
+      margin: 0;
+    }
+    .navbar button {
+      background: transparent;
+      border: 2px solid white;
+      border-radius: 20px;
+      padding: 6px 15px;
+      cursor: pointer;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .navbar button:hover {
+      background: white;
+      color: #111;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 400px;
+      animation: fadeIn 0.6s ease;
+      color: var(--text-color);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .input-box {
+      display: flex;
+      margin-bottom: 15px;
+    }
+    .input-box input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 12px 0 0 12px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.7);
+      color: #333;
+    }
+    body.dark .input-box input {
+      background: rgba(255,255,255,0.1);
+      color: #f1f5f9;
+    }
+
+    .input-box button {
+      padding: 12px;
+      background: #22c55e;
+      border: none;
+      border-radius: 0 12px 12px 0;
+      cursor: pointer;
+      color: white;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .input-box button:hover {
+      background: #16a34a;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--task-bg);
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transform: translateY(30px);
+      opacity: 0;
+      animation: slideIn 0.5s forwards;
+    }
+    li.done span {
+      text-decoration: line-through;
+      color: gray;
+    }
+    .actions button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 8px;
+      transition: transform 0.2s;
+    }
+    .actions button:hover {
+      transform: scale(1.2);
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: scale(0.9);}
+      to {opacity: 1; transform: scale(1);}
+    }
+    @keyframes slideIn {
+      to {transform: translateY(0); opacity: 1;}
+    }
+    li.editing {
+  background: #fde68a;
+}
+
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h2>My Pro To-Do</h2>
+    <button id="gameBtn">🎮 Game </button>
+    <button onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h1>✨ Animated To-Do List</h1>
+      <div class="input-box">
+        <input type="text" id="taskInput" placeholder="Add a new task...">
+        <button onclick="addTask()">+</button>
+      </div>
+      <ul id="taskList"></ul>
+    </div>
+  </div>
+
+  <!-- Sound effects -->
+  <audio id="addSound" src=""></audio>
+  <audio id="editSound" src=""></audio>
+  <audio id="deleteSound" src=""></audio>
+  <audio id="themeSound" src=""></audio>
+
+  <script>
+
+    document.getElementById("gameBtn").addEventListener("click", () => {
+  window.location.href = "game.html"; 
+});
+
+
+    const taskInput = document.getElementById("taskInput");
+    const taskList = document.getElementById("taskList");
+    const themeBtn = document.getElementById("themeBtn");
+
+    // Sound refs
+    const addSound = document.getElementById("addSound");
+    const editSound = document.getElementById("editSound");
+    const deleteSound = document.getElementById("deleteSound");
+    const themeSound = document.getElementById("themeSound");
+
+    function playSound(sound) {
+      sound.currentTime = 0;
+      sound.play();
+    }
+
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      if (taskText === "") return;
+
+      const li = document.createElement("li");
+      const span = document.createElement("span");
+      span.textContent = taskText;
+      span.onclick = () => li.classList.toggle("done");
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      // Edit button
+      const editBtn = document.createElement("button");
+      editBtn.innerHTML = "✏️";
+      editBtn.onclick = () => { 
+        editTask(li, span); 
+        playSound(editSound); 
+      };
+
+      // Delete button
+      const delBtn = document.createElement("button");
+      delBtn.innerHTML = "🗑️";
+      delBtn.onclick = () => { 
+        li.remove(); 
+        playSound(deleteSound); 
+      };
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
+      li.appendChild(span);
+      li.appendChild(actions);
+      taskList.appendChild(li);
+
+      taskInput.value = "";
+      playSound(addSound);
+    }
+
+    function editTask(li, span) {
+      const currentText = span.textContent;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = currentText;
+      input.style.flex = "1";
+      
+      li.replaceChild(input, span);
+      input.focus();
+
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") saveEdit(li, input);
+      });
+
+      input.addEventListener("blur", () => saveEdit(li, input));
+    }
+
+    function saveEdit(li, input) {
+      const newText = input.value.trim();
+      const span = document.createElement("span");
+      span.textContent = newText || "(empty)";
+      span.onclick = () => li.classList.toggle("done");
+      li.replaceChild(span, input);
+    }
+
+    taskInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") addTask();
+    });
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      if (document.body.classList.contains("dark")) {
+        themeBtn.textContent = "☀️ Light";
+      } else {
+        themeBtn.textContent = "🌙 Dark";
+      }
+      playSound(themeSound);
+    }
+  </script>
+</body>
+</html>
